@@ -1,0 +1,9 @@
+Oct  8 03:12:01 servidor sshd[1201]: Failed password for root from 203.0.113.45 port 51234 ssh2
+Oct  8 03:12:03 servidor sshd[1203]: Failed password for root from 203.0.113.45 port 51236 ssh2
+Oct  8 03:12:05 servidor sshd[1205]: Failed password for invalid user admin from 203.0.113.45 port 51240 ssh2
+Oct  8 03:12:07 servidor sshd[1207]: Failed password for invalid user test from 203.0.113.45 port 51244 ssh2
+Oct  8 03:12:09 servidor sshd[1209]: Failed password for root from 203.0.113.45 port 51248 ssh2
+Oct  8 03:12:11 servidor sshd[1211]: Failed password for root from 203.0.113.45 port 51252 ssh2
+Oct  8 08:45:22 servidor sshd[2201]: Accepted publickey for anne from 198.51.100.7 port 40022 ssh2
+Oct  8 08:50:10 servidor sudo:     anne : TTY=pts/0 ; PWD=/home/anne ; USER=root ; COMMAND=/usr/bin/apt update
+Oct  8 09:15:44 servidor sshd[2305]: Failed password for anne from 198.51.100.7 port 40100 ssh2

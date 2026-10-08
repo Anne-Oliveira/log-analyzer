@@ -7,7 +7,7 @@ name = "log-analyzer"
 version = "0.1.0"
 description = "Analisador de logs focado em detecção de atividade suspeita"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "pyyaml>=6.0",
 ]
