@@ -1,0 +1,4 @@
+{"timestamp":"2026-10-08T10:00:00-03:00","level":"info","service":"api","message":"login ok","user":"anne","client_ip":"198.51.100.20"}
+{"timestamp":"2026-10-08T10:01:00-03:00","level":"warning","service":"api","message":"login failed","user":"admin","client_ip":"203.0.113.77","event":"login_failed","attempt":1}
+{"timestamp":"2026-10-08T10:01:02-03:00","level":"warning","service":"api","message":"login failed","user":"admin","client_ip":"203.0.113.77","event":"login_failed","attempt":2}
+{"@timestamp":"2026-10-08T10:01:05-03:00","level":"error","service":"api","msg":"token invalid","remote_addr":"203.0.113.77"}

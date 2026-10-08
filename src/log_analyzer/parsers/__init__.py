@@ -2,10 +2,16 @@
 from __future__ import annotations
 
 from log_analyzer.parsers.base import BaseParser
+from log_analyzer.parsers.generic import GenericParser
+from log_analyzer.parsers.jsonl import JsonLinesParser
+from log_analyzer.parsers.nginx import NginxParser
 from log_analyzer.parsers.syslog import SyslogParser
 
 PARSERS: dict[str, type[BaseParser]] = {
     "syslog": SyslogParser,
+    "nginx": NginxParser,
+    "jsonl": JsonLinesParser,
+    "generic": GenericParser,  # exige o argumento 'pattern'
 }
 
 
