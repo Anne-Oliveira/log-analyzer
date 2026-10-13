@@ -23,7 +23,7 @@ def _open_text(path: Path) -> IO[str]:
     # errors="replace": um byte inválido não pode derrubar a análise inteira
     if path.suffix == ".gz":
         return gzip.open(path, "rt", encoding="utf-8", errors="replace")
-    return open(path, "r", encoding="utf-8", errors="replace")
+    return open(path, encoding="utf-8", errors="replace")
 
 
 def iter_files(target: str | Path, recursive: bool = True) -> Iterator[Path]:

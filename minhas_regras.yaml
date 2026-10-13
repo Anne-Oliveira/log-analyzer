@@ -1,0 +1,68 @@
+general:
+  max_evidence: 10
+auth_brute_force:
+  enabled: true
+  threshold: 5
+  window_seconds: 300
+  high_count: 20
+  events:
+  - ssh_failed_login
+  - login_failed
+  success_events:
+  - ssh_accepted_login
+web_scanner:
+  enabled: true
+  threshold: 5
+  window_seconds: 60
+  high_count: 30
+  status_codes:
+  - 400
+  - 403
+  - 404
+http_auth_failures:
+  enabled: true
+  threshold: 10
+  window_seconds: 300
+  high_count: 50
+  status_codes:
+  - 401
+  login_paths:
+  - /login
+  - /signin
+  - /auth
+  - /admin
+  - /wp-login.php
+  - /xmlrpc.php
+suspicious_request:
+  enabled: true
+  min_hits: 3
+  high_count: 10
+  path_patterns:
+  - \.\./
+  - /etc/(passwd|shadow)
+  - /\.env\b
+  - /\.git(/|$)
+  - wp-login\.php|wp-admin|xmlrpc\.php
+  - phpmyadmin
+  - union\s+select|<script|sleep\(\d+\)|or\s+1=1
+  - cgi-bin|vendor/phpunit|/actuator|/\.aws|/\.ssh
+  user_agent_patterns:
+  - nmap
+  - sqlmap
+  - nikto
+  - masscan
+  - wpscan
+  - dirbuster
+  - gobuster
+  - nuclei
+  - zgrab
+sudo:
+  enabled: true
+  min_failed_attempts: 3
+  sensitive_commands:
+  - (^|/)(ba|z|da)?sh(\s|$)
+  - chmod\s+(-\w+\s+)*[0-7]*777|chmod\s+\S*\+s
+  - \b(useradd|adduser|usermod|userdel|passwd)\b
+  - /etc/(sudoers|shadow|passwd)|visudo
+  - (curl|wget)\s.*\|\s*(ba)?sh
+  - \b(nc|ncat|netcat)\s

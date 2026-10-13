@@ -1,19 +1,44 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "log-analyzer"
-version = "0.1.0"
+version = "1.0.0"
 description = "Analisador de logs focado em detecção de atividade suspeita"
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["logs", "security", "log-analysis", "brute-force", "ssh", "nginx", "blue-team"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
 dependencies = [
     "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML",
+]
+
+[project.urls]
+Repository = "https://github.com/Anne-Oliveira/log-analyzer"
 
 [project.scripts]
 log-analyzer = "log_analyzer.cli:main"
@@ -21,5 +46,29 @@ log-analyzer = "log_analyzer.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+log_analyzer = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+# E741: nomes curtos como "l" em compreensões dos testes. UP017: mantemos timezone.utc (mais explícito).
+ignore = ["E741", "UP017"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["log_analyzer"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+packages = ["log_analyzer"]
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
