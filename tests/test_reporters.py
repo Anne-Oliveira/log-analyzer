@@ -168,3 +168,17 @@ def test_get_reporter_cria_o_relatorio_certo():
 def test_relatorio_desconhecido():
     with pytest.raises(ValueError):
         get_reporter("pdf")
+
+def test_html_resumo_em_linguagem_natural():
+    assert "Tudo tranquilo por aqui" in HtmlReporter().render(vazio())
+
+    saida = HtmlReporter().render(analisar())
+    assert "2 achados</strong> para olhar com atenção" in saida
+    assert "médio" in saida  # selos em português no HTML
+
+
+def test_html_tem_barra_de_severidade_e_tema_escuro():
+    saida = HtmlReporter().render(analisar())
+
+    assert 'class="sevbar"' in saida
+    assert "prefers-color-scheme:dark" in saida

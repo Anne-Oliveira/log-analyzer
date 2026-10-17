@@ -9,58 +9,120 @@ from pathlib import Path
 from log_analyzer.findings import Finding, Severity
 from log_analyzer.reporters.base import ReportData, Reporter, fmt_dt
 
-_CSS = """
-:root{--bg:#f7f7fb;--fg:#1c1b22;--muted:#6b6880;--card:#ffffff;--line:#e3e1ee;--accent:#7c3aed;
---critical:#b91c1c;--high:#dc2626;--medium:#d97706;--low:#0891b2;--bar:#a78bfa}
-@media (prefers-color-scheme: dark){:root{--bg:#120d1e;--fg:#ece9f7;--muted:#9d97b8;--card:#1b1530;
---line:#2d2548;--accent:#c084fc;--bar:#a78bfa}}
+# Nomes exibidos no HTML (as classes e o resto do sistema continuam usando os nomes em inglês).
+_SEVERITY_PT = {"critical": "crítico", "high": "alto", "medium": "médio", "low": "baixo"}
+
+# Para mudar o visual, o mais simples é mexer nas variáveis de cor do :root (claro e escuro).
+_CSS = r"""
+:root{
+  --bg:#fcf7fb;--paper:#ffffff;--ink:#2b1f3f;--muted:#7b6c91;--line:#eadcf0;--soft:#f6edf9;
+  --accent:#7c3aed;--pink:#db2777;--marker:#fbcfe8;
+  --code-bg:#241a38;--code-ink:#efe8fb;--code-ln:#f9a8d4;
+  --c-critical:#be123c;--c-high:#db2777;--c-medium:#7c3aed;--c-low:#4f5bd5;--on-sev:#ffffff;
+  --shadow:0 1px 2px rgba(80,40,120,.06),0 12px 28px -18px rgba(124,58,237,.45);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Noto Serif",Georgia,serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#120d1e;--paper:#1b1530;--ink:#f1ecfb;--muted:#a79bc4;--line:#2d2548;--soft:#241b3e;
+    --accent:#c084fc;--pink:#f472b6;--marker:rgba(244,114,182,.28);
+    --code-bg:#0d0817;--code-ink:#e9e1f8;--code-ln:#f472b6;
+    --c-critical:#fb7185;--c-high:#f472b6;--c-medium:#c084fc;--c-low:#93a3ff;--on-sev:#1a0f2e;
+    --shadow:0 12px 28px -18px rgba(0,0,0,.7);
+  }
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:1100px;margin:0 auto;padding:32px 20px 64px}
-h1{margin:0 0 4px;font-size:26px}
-h2{margin:40px 0 12px;font-size:19px;border-bottom:1px solid var(--line);padding-bottom:6px}
-h3{margin:24px 0 8px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.sub{color:var(--muted);margin:0}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
-.num{font-size:26px;font-weight:700;color:var(--accent)}
-.lbl{color:var(--muted);font-size:13px}
-.pills{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
-.pill{border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:13px;background:var(--card);text-transform:uppercase}
-.badge{display:inline-block;border-radius:6px;padding:1px 8px;margin-right:8px;font-size:12px;font-weight:700;color:#fff;text-transform:uppercase}
-.badge.sev-critical{background:var(--critical)}
-.badge.sev-high{background:var(--high)}
-.badge.sev-medium{background:var(--medium)}
-.badge.sev-low{background:var(--low)}
-details.finding{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:8px;margin:10px 0}
-details.finding.sev-critical{border-left-color:var(--critical)}
-details.finding.sev-high{border-left-color:var(--high)}
-details.finding.sev-medium{border-left-color:var(--medium)}
-details.finding.sev-low{border-left-color:var(--low)}
-summary{cursor:pointer;padding:12px 14px;font-weight:600}
-.rule{font-family:ui-monospace,monospace;font-size:12px;color:var(--muted);margin-right:8px;font-weight:400}
-.body{padding:0 14px 14px}
-.meta{color:var(--muted);margin:0 0 8px}
-pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;overflow-x:auto;font-size:12px;white-space:pre-wrap;word-break:break-all}
-dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:8px 0;font-size:13px}
-dt{color:var(--muted)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);border-top:5px solid var(--accent)}
+main{max-width:1040px;margin:0 auto;padding:40px 22px 72px}
+
+.sev-critical{--c:var(--c-critical)}
+.sev-high{--c:var(--c-high)}
+.sev-medium{--c:var(--c-medium)}
+.sev-low{--c:var(--c-low)}
+
+.brand{font:600 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--pink)}
+h1{font:700 clamp(28px,5vw,40px)/1.15 var(--serif);margin:6px 0 18px}
+.lead{font:400 clamp(19px,3vw,23px)/1.4 var(--serif);margin:0 0 4px}
+.lead strong{font-weight:700;background:linear-gradient(transparent 60%,var(--marker) 60%);padding:0 3px}
+.sub{color:var(--muted);margin:0 0 4px}
+.source{font:13px var(--mono);color:var(--muted);margin:14px 0 0}
+.source b{color:var(--ink);font-weight:600}
+
+.glance{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:22px 0 0}
+.glance li{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:13px;color:var(--muted)}
+.glance b{color:var(--accent);font-weight:700;margin-right:3px}
+
+.sevbar{display:flex;gap:3px;height:10px;border-radius:999px;overflow:hidden;background:var(--soft);margin:26px 0 12px}
+.seg{background:var(--c);min-width:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;padding:0;margin:0;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.legend b{color:var(--ink)}
+
+h2{font:700 25px/1.2 var(--serif);margin:52px 0 16px}
+.hl{background:linear-gradient(transparent 62%,var(--marker) 62%);padding:0 4px;margin:0 -4px}
+
+details.finding{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;margin:12px 0;box-shadow:var(--shadow)}
+summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px 18px;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";flex:none;width:7px;height:7px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(-45deg);transition:transform .15s}
+details[open]>summary::before{transform:rotate(45deg)}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:12px}
+.badge{font:700 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:var(--c);color:var(--on-sev)}
+.ftitle{flex:1 1 260px;font:600 16px/1.4 var(--sans)}
+.rule{font:12px var(--mono);color:var(--muted);background:var(--soft);padding:2px 8px;border-radius:6px}
+.body{padding:0 18px 18px 37px}
+.desc{margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0 0 14px}
+.chips li{background:var(--soft);border-radius:8px;padding:4px 10px;font-size:13px;word-break:break-word}
+.chips li span{color:var(--muted);margin-right:6px}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:13px;margin:0 0 14px}
+dt{color:var(--muted);font-family:var(--mono)}
 dd{margin:0;word-break:break-word}
-.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}
-th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:600}
-.hour{display:flex;align-items:center;gap:10px;font-size:12px;font-family:ui-monospace,monospace;margin:3px 0}
-.hour .h{width:130px;color:var(--muted)}
-.track{flex:1;background:var(--card);border-radius:4px;height:12px;overflow:hidden}
-.fill{display:block;height:100%;background:var(--bar)}
-.empty{color:var(--muted)}
-footer{margin-top:48px;color:var(--muted);font-size:12px}
+h4{font:600 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+pre.evidence{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow-x:auto;font:12.5px/1.65 var(--mono);white-space:pre-wrap;word-break:break-all}
+.ln{color:var(--code-ln);margin-right:12px;user-select:none}
+.empty{background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.panel.wide{grid-column:1/-1}
+.panel h3{font:700 17px var(--serif);margin:0 0 10px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:2px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;word-break:break-word}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--soft)}
+
+.hours{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:var(--shadow)}
+.hour{display:flex;align-items:center;gap:12px;font:12px var(--mono);margin:6px 0}
+.hour .h{flex:none;width:128px;color:var(--muted)}
+.track{flex:1;height:12px;border-radius:999px;background:var(--soft);overflow:hidden}
+.fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--pink))}
+.hour .n{flex:none;width:44px;text-align:right}
+
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+
+@media (max-width:560px){
+  main{padding:28px 14px 56px}
+  .body{padding-left:18px}
+  .hour .h{width:108px}
+}
+@media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+@media print{body{border:0}details.finding,.panel{break-inside:avoid;box-shadow:none}}
 """
 
 
 def esc(value: object) -> str:
     """Todo texto vindo de log passa por aqui antes de entrar no HTML."""
     return html.escape(str(value), quote=True)
+
+
+def _plural(count: int, one: str, many: str) -> str:
+    return one if count == 1 else many
 
 
 def _table(headers: list[str], rows: Iterable[tuple]) -> str:
@@ -71,12 +133,17 @@ def _table(headers: list[str], rows: Iterable[tuple]) -> str:
     return f'<div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
+def _panel(title: str, body: str, wide: bool = False) -> str:
+    css = "panel wide" if wide else "panel"
+    return f'<section class="{css}"><h3>{esc(title)}</h3>{body}</section>'
+
+
 class HtmlReporter(Reporter):
     name = "html"
     extension = ".html"
 
     def __init__(self, top_n: int = 10, max_hours: int = 72,
-                 title: str = "Log Analyzer — relatório") -> None:
+                 title: str = "Relatório de análise de logs") -> None:
         self.top_n = top_n
         self.max_hours = max_hours
         self.title = title
@@ -84,26 +151,48 @@ class HtmlReporter(Reporter):
     def render(self, data: ReportData) -> str:
         stats = data.stats
         counts = data.severity_counts()
+        total = len(data.findings)
+        serious = counts["critical"] + counts["high"]
 
-        cards = [
-            ("Entradas analisadas", data.parsed),
-            ("Linhas ignoradas", data.skipped),
-            ("Achados", len(data.findings)),
-            ("Críticos + altos", counts["critical"] + counts["high"]),
-            ("IPs distintos", len(stats.ips)),
-        ]
-        cards_html = "".join(
-            f'<div class="card"><div class="num">{esc(value)}</div><div class="lbl">{esc(label)}</div></div>'
-            for label, value in cards
+        if total == 0:
+            analisadas = _plural(data.parsed, "entrada analisada", "entradas analisadas")
+            lead = (f"<strong>Tudo tranquilo por aqui:</strong> "
+                    f"nenhum achado em {data.parsed} {analisadas}.")
+            detail = ""
+        else:
+            achados = _plural(total, "achado", "achados")
+            lead = f"<strong>{total} {achados}</strong> para olhar com atenção."
+            if serious:
+                detail = f"{serious} {_plural(serious, 'é', 'são')} de severidade alta ou crítica."
+            else:
+                detail = "Nenhum de severidade alta ou crítica."
+        detail_html = f'<p class="sub">{esc(detail)}</p>' if detail else ""
+
+        glance = "".join(
+            f"<li><b>{esc(value)}</b> {esc(label)}</li>"
+            for value, label in (
+                (data.parsed, "entradas analisadas"),
+                (data.skipped, "linhas ignoradas"),
+                (len(stats.ips), "IPs distintos"),
+            )
         )
-        pills_html = "".join(
-            f'<span class="pill">{esc(label)} <b>{count}</b></span>' for label, count in counts.items()
+
+        segments = "".join(
+            f'<span class="seg sev-{label}" style="flex:{count}"></span>'
+            for label, count in counts.items() if count
+        )
+        bar = (f'<div class="sevbar" role="img" aria-label="Distribuição dos achados por severidade">'
+               f"{segments}</div>")
+        legend = "".join(
+            f'<li class="sev-{label}"><i></i>{esc(_SEVERITY_PT[label])} <b>{count}</b></li>'
+            for label, count in counts.items()
         )
 
         if data.findings:
-            findings_html = "".join(self._finding(i, f) for i, f in enumerate(data.findings, start=1))
+            findings_html = "".join(self._finding(f) for f in data.findings)
         else:
-            findings_html = '<p class="empty">Nenhum achado.</p>'
+            findings_html = ('<p class="empty">Nenhum achado. '
+                             "Nenhuma das regras foi disparada por estes logs.</p>")
 
         title = esc(self.title)
         source = esc(data.source or "-")
@@ -123,34 +212,41 @@ class HtmlReporter(Reporter):
 <body>
 <main>
 <header>
+<div class="brand">log-analyzer</div>
 <h1>{title}</h1>
-<p class="sub">Origem: <b>{source}</b> · Formato: <b>{log_format}</b> · Período: {period}</p>
+<p class="lead">{lead}</p>
+{detail_html}
+<p class="source">origem <b>{source}</b> · formato <b>{log_format}</b> · período <b>{period}</b></p>
+<ul class="glance">{glance}</ul>
+{bar}
+<ul class="legend">{legend}</ul>
 </header>
-<section class="cards">{cards_html}</section>
-<h2>Achados ({len(data.findings)})</h2>
-<div class="pills">{pills_html}</div>
+<h2><span class="hl">Achados ({total})</span></h2>
 {findings_html}
-<h2>Estatísticas</h2>
+<h2><span class="hl">Estatísticas</span></h2>
 {self._stats(data)}
 {self._hours(data)}
-<footer>Gerado por log-analyzer em {generated}. Todos os horários estão em UTC.</footer>
+<footer>Gerado por log-analyzer em {generated} · todos os horários em UTC</footer>
 </main>
 </body>
 </html>
 """
 
-    def _finding(self, index: int, finding: Finding) -> str:
-        label = esc(finding.severity.label)
+    def _finding(self, finding: Finding) -> str:
+        label = finding.severity.label
         open_attr = " open" if finding.severity >= Severity.HIGH else ""
 
-        meta = []
+        chips: list[tuple[str, object]] = []
         if finding.ip:
-            meta.append(f"<b>IP</b> {esc(finding.ip)}")
+            chips.append(("IP", finding.ip))
         if finding.user:
-            meta.append(f"<b>Usuário</b> {esc(finding.user)}")
-        meta.append(f"<b>Ocorrências</b> {finding.count}")
+            chips.append(("Usuário", finding.user))
+        chips.append(("Ocorrências", finding.count))
         if finding.first_seen:
-            meta.append(f"<b>Período</b> {esc(fmt_dt(finding.first_seen))} → {esc(fmt_dt(finding.last_seen))}")
+            chips.append(
+                ("Período", f"{fmt_dt(finding.first_seen)} → {fmt_dt(finding.last_seen)}")
+            )
+        chips_html = "".join(f"<li><span>{esc(k)}</span>{esc(v)}</li>" for k, v in chips)
 
         details_html = ""
         if finding.details:
@@ -166,49 +262,54 @@ class HtmlReporter(Reporter):
         evidence_html = ""
         if finding.evidence:
             lines = "\n".join(
-                esc(f"{Path(e.file).name}:{e.line_number}  {e.raw}") for e in finding.evidence
+                f'<span class="line"><span class="ln">{esc(Path(e.file).name)}:{e.line_number}</span>'
+                f"{esc(e.raw)}</span>"
+                for e in finding.evidence
             )
-            evidence_html = f"<h3>Evidências ({len(finding.evidence)})</h3><pre>{lines}</pre>"
+            evidence_html = (f"<h4>Evidências ({len(finding.evidence)})</h4>"
+                             f'<pre class="evidence">{lines}</pre>')
 
-        description = f"<p>{esc(finding.description)}</p>" if finding.description else ""
+        description = f'<p class="desc">{esc(finding.description)}</p>' if finding.description else ""
         return (
             f'<details class="finding sev-{label}"{open_attr}>'
-            f'<summary><span class="badge sev-{label}">{label}</span>'
-            f'<span class="rule">{esc(finding.rule)}</span>{esc(finding.title)}</summary>'
-            f'<div class="body"><p class="meta">{" · ".join(meta)}</p>'
-            f"{description}{details_html}{evidence_html}</div></details>"
+            f'<summary><span class="badge sev-{label}">{esc(_SEVERITY_PT[label])}</span>'
+            f'<span class="ftitle">{esc(finding.title)}</span>'
+            f'<span class="rule">{esc(finding.rule)}</span></summary>'
+            f'<div class="body">{description}<ul class="chips">{chips_html}</ul>'
+            f"{details_html}{evidence_html}</div></details>"
         )
 
     def _stats(self, data: ReportData) -> str:
         stats = data.stats
-        blocks = [_table(
+        panels = [_panel("Visão geral", _table(
             ["Métrica", "Valor"],
             [("Total de entradas", stats.total), ("Entradas sem horário", stats.without_timestamp)],
-        )]
+        ))]
         for heading, counter in (
             ("Por nível", stats.by_level),
             ("Por evento", stats.by_event),
             ("Por processo", stats.by_process),
         ):
             if counter:
-                blocks.append(f"<h3>{esc(heading)}</h3>" + _table(
-                    ["Item", "Ocorrências"], counter.most_common(self.top_n)))
+                panels.append(_panel(heading, _table(
+                    ["Item", "Ocorrências"], counter.most_common(self.top_n))))
         if stats.by_status:
-            blocks.append("<h3>Status HTTP</h3>" + _table(
-                ["Status", "Respostas"], sorted(stats.by_status.items())))
+            panels.append(_panel("Status HTTP", _table(
+                ["Status", "Respostas"], sorted(stats.by_status.items()))))
 
         top_ips = stats.top_ips(self.top_n)
         if top_ips:
-            rows = [(i.ip, i.count, fmt_dt(i.first_seen), fmt_dt(i.last_seen)) for i in top_ips]
-            blocks.append("<h3>Top IPs</h3>" + _table(
-                ["IP", "Ocorrências", "Primeira vez", "Última vez"], rows))
+            ip_rows = [(i.ip, i.count, fmt_dt(i.first_seen), fmt_dt(i.last_seen)) for i in top_ips]
+            panels.append(_panel("Top IPs", _table(
+                ["IP", "Ocorrências", "Primeira vez", "Última vez"], ip_rows), wide=True))
         if stats.users:
-            blocks.append("<h3>Top usuários</h3>" + _table(
-                ["Usuário", "Ocorrências"], stats.top_users(self.top_n)))
+            panels.append(_panel("Top usuários", _table(
+                ["Usuário", "Ocorrências"], stats.top_users(self.top_n))))
         if stats.paths:
-            rows = [(path[:80], n) for path, n in stats.top_paths(self.top_n)]
-            blocks.append("<h3>Top caminhos</h3>" + _table(["Caminho", "Requisições"], rows))
-        return "".join(blocks)
+            path_rows = [(path[:80], n) for path, n in stats.top_paths(self.top_n)]
+            panels.append(_panel("Top caminhos", _table(
+                ["Caminho", "Requisições"], path_rows), wide=True))
+        return '<div class="grid">' + "".join(panels) + "</div>"
 
     def _hours(self, data: ReportData) -> str:
         by_hour = data.stats.by_hour
@@ -230,4 +331,5 @@ class HtmlReporter(Reporter):
                 f'<span class="track"><span class="fill" style="width:{percent}%"></span></span>'
                 f'<span class="n">{count}</span></div>'
             )
-        return f"<h2>Atividade por hora (UTC){esc(note)}</h2>" + "".join(rows)
+        return (f'<h2><span class="hl">Atividade por hora (UTC){esc(note)}</span></h2>'
+                f'<div class="hours">{"".join(rows)}</div>')
