@@ -147,10 +147,10 @@ class BurstDetector(Detector):
             # maxlen=threshold limita a memória mesmo em ataques com milhões de linhas
             state = self._states[key] = _BurstState(recent=deque(maxlen=self.threshold))
 
-            if (state.finding is not None and state.last_ts is not None
-                and ts - state.last_ts > self.window):
-                    self._closed.append(state.finding)  # a rajada anterior terminou
-                    state.finding = None
+        if (state.finding is not None and state.last_ts is not None
+            and ts - state.last_ts > self.window):
+                self._closed.append(state.finding)  # a rajada anterior terminou
+                state.finding = None
 
         while state.recent and ts - state.recent[0][0] > self.window:
             state.recent.popleft()

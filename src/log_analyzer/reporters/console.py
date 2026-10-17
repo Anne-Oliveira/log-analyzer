@@ -126,9 +126,9 @@ class ConsoleReporter(Reporter):
         top_ips = stats.top_ips(self.top_n)
         if top_ips:
             out += ["", paint("Top IPs", _BOLD)]
-            rows = [(i.ip, str(i.count), fmt_dt(i.first_seen), fmt_dt(i.last_seen)) for i in top_ips]
+            ip_rows = [(i.ip, str(i.count), fmt_dt(i.first_seen), fmt_dt(i.last_seen)) for i in top_ips]
             out += ["  " + line for line in
-                    _table(["IP", "Ocorrências", "Primeira vez", "Última vez"], rows)]
+                    _table(["IP", "Ocorrências", "Primeira vez", "Última vez"], ip_rows)]
 
         top_users = stats.top_users(self.top_n)
         if top_users:
@@ -139,8 +139,8 @@ class ConsoleReporter(Reporter):
         top_paths = stats.top_paths(self.top_n)
         if top_paths:
             out += ["", paint("Top caminhos", _BOLD)]
-            rows = [(path[:60], str(n)) for path, n in top_paths]
-            out += ["  " + line for line in _table(["Caminho", "Requisições"], rows)]
+            path_rows = [(path[:60], str(n)) for path, n in top_paths]
+            out += ["  " + line for line in _table(["Caminho", "Requisições"], path_rows)]
 
         out.extend(self._hours_lines(stats.by_hour, paint))
         return "\n".join(out) + "\n"
